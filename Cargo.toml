@@ -1,0 +1,26 @@
+[package]
+name = "reddit-ko"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+axum = { version = "0.8", default-features = false, features = ["http1", "json", "tokio"] }
+tokio = { version = "1", features = ["rt", "macros", "net", "time", "sync"] }
+# native-tls = Windows 기본 TLS(schannel). rustls보다 빌드가 가볍다.
+reqwest = { version = "0.12", default-features = false, features = ["native-tls"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+pbkdf2 = "0.12"
+sha2 = "0.10"
+getrandom = "0.2"
+
+# 개발 빌드에서도 PBKDF2가 느리지 않게 의존 패키지만 최적화
+[profile.dev.package."*"]
+opt-level = 3
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

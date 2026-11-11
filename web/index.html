@@ -1,0 +1,661 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; connect-src 'self' https://translate.googleapis.com https://arctic-shift.photon-reddit.com; img-src https://i.redd.it https://preview.redd.it; style-src 'unsafe-inline'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+<title>r/ClaudeAI 한국어</title>
+<style>
+:root{
+  --bg:#F5F5F7;--card:#FFF;--text:#1D1D1F;--sub:#6E6E73;--line:rgba(0,0,0,.12);
+  --fill:rgba(0,0,0,.05);--bar:rgba(245,245,247,.72);--accent:#0071E3;--warn:#B3261E;
+  --ease:cubic-bezier(.2,.8,.2,1);
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#000;--card:#1C1C1E;--text:#F5F5F7;--sub:#98989D;--line:rgba(255,255,255,.16);
+  --fill:rgba(255,255,255,.09);--bar:rgba(0,0,0,.62);--warn:#FF6961;
+}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);
+  font:17px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text","Apple SD Gothic Neo","Pretendard","Malgun Gothic",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;word-break:keep-all;overflow-wrap:anywhere}
+[hidden]{display:none!important}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button{font:inherit;color:inherit}
+
+/* 잠금 화면 */
+.lock{min-height:100dvh;display:grid;place-content:center;justify-items:center;text-align:center;
+  padding:24px;gap:6px}
+.lock canvas{width:160px;height:160px}
+.lock h1{font-size:28px;font-weight:700;letter-spacing:-.02em;line-height:1.15;margin:8px 0 0}
+.sub{color:var(--sub);font-size:15px;margin:0}
+.lock form{display:grid;gap:10px;width:min(320px,86vw);margin-top:14px}
+.field{position:relative}
+.field input{width:100%;height:48px;border-radius:14px;border:.5px solid var(--line);
+  background:var(--card);color:var(--text);font:inherit;padding:0 64px 0 16px}
+.eye{position:absolute;right:4px;top:2px;height:44px;min-width:52px;border:0;background:none;
+  color:var(--sub);font-size:14px;cursor:pointer;border-radius:10px}
+.primary{height:48px;border-radius:999px;border:0;background:var(--accent);color:#fff;font-weight:600;
+  cursor:pointer;transition:transform .1s ease-out,opacity .2s}
+.primary:active{transform:scale(.97)}
+.primary:disabled{opacity:.5;cursor:default}
+.warn{font-size:13px;margin:0;color:var(--warn);min-height:1.5em}
+.hint{font-size:12px;color:var(--sub);max-width:320px;margin:14px 0 0}
+.shake{animation:shake .3s var(--ease)}
+
+/* 위쪽 막대: 반투명, 글이 아래로 지나간다 */
+.bar{position:sticky;top:0;z-index:5;background:var(--bar);
+  -webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);
+  border-bottom:.5px solid var(--line);
+  padding:calc(10px + env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) 10px max(16px,env(safe-area-inset-left))}
+.bar-in{max-width:720px;margin:0 auto;display:flex;align-items:center;gap:8px}
+.ttl{margin-right:auto;min-width:0}
+.bar h1{font-size:20px;font-weight:700;letter-spacing:-.02em;line-height:1.2;margin:0}
+.status{font-size:13px;color:var(--sub);display:flex;align-items:center;gap:6px}
+.dot{width:7px;height:7px;border-radius:50%;background:#34C759;flex:none;animation:pulse 1.6s ease-in-out infinite alternate}
+.status.off .dot{background:var(--sub);animation:none}
+.chip{border:0;background:var(--fill);border-radius:999px;padding:0 14px;min-height:36px;font-size:14px;
+  font-weight:500;cursor:pointer;white-space:nowrap;transition:transform .1s ease-out}
+.chip:active{transform:scale(.96)}
+@media (pointer:coarse){.chip{min-height:44px}}
+.bar h1,.status{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.title .og{font-size:.76em}
+@media (max-width:480px){.bar h1{font-size:18px}.chip{padding:0 12px}}
+
+/* 글 목록 */
+#feed{max-width:752px;margin:0 auto;display:grid;gap:12px;
+  padding:16px max(16px,env(safe-area-inset-right)) calc(40px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+.card{background:var(--card);border-radius:18px;border:.5px solid var(--line);min-width:0}
+.card.new{animation:arrive .45s var(--ease)}
+summary{list-style:none;cursor:pointer;padding:18px 20px;border-radius:18px;transition:transform .1s ease-out}
+summary::-webkit-details-marker{display:none}
+summary:active{transform:scale(.99)}
+.title{font-size:19px;line-height:1.35;font-weight:600;letter-spacing:-.015em;margin:0}
+.excerpt{margin:6px 0 0;color:var(--sub);font-size:15px}
+.excerpt span{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+details[open] .excerpt{display:none}
+.meta{margin-top:10px;font-size:13px;color:var(--sub);display:flex;gap:4px 12px;flex-wrap:wrap;align-items:center}
+.meta a{color:inherit;text-underline-offset:2px}
+.body{padding:0 20px 18px;font-size:16px;line-height:1.65}
+details[open] .body{animation:rise .35s var(--ease)}
+.body p{margin:0 0 12px}
+.body h3{font-size:17px;line-height:1.35;margin:18px 0 8px}
+.body .li{padding-left:16px;position:relative}
+.body .li::before{content:"•";position:absolute;left:2px;color:var(--sub)}
+.body blockquote{margin:0 0 12px;padding-left:12px;border-left:2px solid var(--line);color:var(--sub)}
+.body pre{background:var(--fill);border-radius:10px;padding:12px;margin:0 0 12px;overflow:auto;
+  font:13px/1.5 ui-monospace,"SF Mono",Consolas,monospace;white-space:pre;word-break:normal;overflow-wrap:normal}
+.body img{max-width:100%;max-height:70vh;border-radius:12px;display:block;margin:4px 0 12px}
+.links{margin:0 0 12px;padding:0;list-style:none;font-size:14px}
+.links a{color:var(--sub);text-underline-offset:2px}
+.cms{border-top:.5px solid var(--line);margin-top:16px;padding-top:14px}
+.cmh{font-size:15px;margin:0 0 10px}
+.cm{padding:2px 0 2px 12px;border-left:2px solid var(--line);margin-bottom:12px;font-size:15px}
+.cm .meta{margin:0 0 4px}
+.cm p{margin:0 0 6px}
+.sk{height:118px;border-radius:18px;background:var(--card);animation:pulse 1s ease-in-out infinite alternate}
+.note{text-align:center;color:var(--sub);font-size:15px;padding:40px 0}
+
+/* 번역문·원문 전환 */
+.wait{opacity:.55}
+/* 원문은 번역문 바로 아래에 작게. 번역이 오기 전에는 같은 글이 두 번 보이지 않게 숨긴다. */
+.og{display:block;margin-top:3px;font-size:.84em;font-weight:400;letter-spacing:0;line-height:1.45;color:var(--sub)}
+.wait + .og,body.solo .og{display:none}
+.chip[aria-pressed=true]{background:var(--text);color:var(--bg)}
+
+/* 새 글 알림: 이 화면에서 파란색을 쓰는 단 한 곳 */
+.pill{position:fixed;left:50%;top:calc(78px + env(safe-area-inset-top));z-index:6;
+  transform:translate(-50%,-10px);opacity:0;pointer-events:none;
+  background:var(--accent);color:#fff;border:0;border-radius:999px;min-height:44px;padding:0 18px;
+  font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.18);
+  transition:transform .35s var(--ease),opacity .35s var(--ease)}
+.pill.on{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+
+@keyframes pulse{from{opacity:1}to{opacity:.45}}
+@keyframes rise{from{opacity:0;transform:translateY(6px)}}
+@keyframes arrive{from{opacity:0;transform:translateY(-12px)}}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition-duration:.01ms!important}
+}
+@media (prefers-reduced-transparency:reduce){
+  .bar{background:var(--bg);-webkit-backdrop-filter:none;backdrop-filter:none}
+}
+@media (prefers-contrast:more){
+  :root{--line:currentColor}
+  .bar{background:var(--bg);-webkit-backdrop-filter:none;backdrop-filter:none}
+}
+</style>
+</head>
+<body>
+
+<main id="lock" class="lock" hidden>
+  <canvas id="gem" aria-hidden="true"></canvas>
+  <h1>r/ClaudeAI 한국어</h1>
+  <p id="lockMsg" class="sub"></p>
+  <form id="lockForm">
+    <div class="field">
+      <input id="pw" type="password" aria-label="암호" autocomplete="current-password" autocapitalize="off" spellcheck="false">
+      <button type="button" id="eye" class="eye" aria-pressed="false">보기</button>
+    </div>
+    <div class="field" id="pw2wrap" hidden>
+      <input id="pw2" type="password" aria-label="암호 한 번 더" placeholder="한 번 더" autocomplete="new-password" autocapitalize="off" spellcheck="false">
+    </div>
+    <p id="caps" class="warn" hidden>Caps Lock이 켜져 있습니다.</p>
+    <p id="err" class="warn" role="alert"></p>
+    <button id="go" class="primary">잠금 해제</button>
+  </form>
+  <p class="hint">암호를 잊었으면 프로그램 폴더의 lock.json을 지우고 다시 실행하면 새로 정할 수 있습니다.</p>
+</main>
+
+<div id="app" hidden>
+  <header class="bar">
+    <div class="bar-in">
+      <div class="ttl">
+        <h1>r/ClaudeAI 한국어</h1>
+        <div id="status" class="status off"><span class="dot"></span><span id="statusText">연결 중</span></div>
+      </div>
+      <button id="lang" class="chip" aria-pressed="true" aria-label="원문 함께 보기">원문</button>
+      <button id="relock" class="chip">잠금</button>
+      <button id="quit" class="chip">종료</button>
+    </div>
+  </header>
+  <button id="pill" class="pill" inert></button>
+  <main id="feed" aria-label="새 글">
+    <div class="sk"></div><div class="sk"></div><div class="sk"></div>
+  </main>
+</div>
+
+<script>
+'use strict';
+const $ = s => document.querySelector(s);
+const el = (tag, cls, text) => {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;   // 바깥에서 온 글은 항상 textContent로만 넣는다
+  return e;
+};
+const ARCTIC = 'https://arctic-shift.photon-reddit.com/api';
+const MAX_CARDS = 100;
+
+/* ───────── 잠금 화면 ───────── */
+let setupMode = false, busy = false, holdTimer = 0, stop3d = null;
+const form = $('#lockForm'), pw = $('#pw'), pw2 = $('#pw2'), go = $('#go');
+const say = t => { $('#err').textContent = t; };
+const setDisabled = on => { pw.disabled = pw2.disabled = go.disabled = on; };
+const goLabel = () => setupMode ? '암호 정하기' : '잠금 해제';
+
+function showLock(st) {
+  setupMode = st.setup;
+  $('#app').hidden = true;
+  $('#lock').hidden = false;
+  $('#pw2wrap').hidden = !setupMode;
+  pw.autocomplete = setupMode ? 'new-password' : 'current-password';
+  $('#lockMsg').textContent = setupMode ? '처음 실행입니다. 쓸 암호를 정하세요(4자 이상).' : '암호를 입력하세요.';
+  go.textContent = goLabel();
+  stop3d = start3d($('#gem'));
+  if (st.wait) hold(st.wait); else pw.focus();
+}
+
+// 여러 번 틀리면 기다리게 한다. 남은 시간은 버튼에만 표시(화면 낭독기가 매초 읽지 않게).
+function hold(secs) {
+  const end = Date.now() + secs * 1000;
+  setDisabled(true);
+  clearInterval(holdTimer);
+  const tick = () => {
+    const left = Math.ceil((end - Date.now()) / 1000);
+    if (left > 0) { go.textContent = `${left}초 뒤 다시 시도`; return; }
+    clearInterval(holdTimer); holdTimer = 0;
+    go.textContent = goLabel(); say(''); setDisabled(false); pw.focus();
+  };
+  tick();
+  holdTimer = setInterval(tick, 1000);
+}
+
+form.addEventListener('submit', async e => {
+  e.preventDefault();
+  if (busy || holdTimer) return;                       // 확인 중에는 다시 넣지 못한다
+  const value = pw.value;
+  if (value.length < 4) return say('암호는 4자 이상이어야 합니다.');
+  if (setupMode && value !== pw2.value) return say('두 암호가 서로 다릅니다.');
+  busy = true; setDisabled(true); say('');
+  let r = null;
+  try {
+    r = await fetch('/api/lock/' + (setupMode ? 'setup' : 'login'), {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pw: value }),
+    });
+  } catch {}
+  busy = false;
+  pw.value = pw2.value = '';
+  if (r && r.ok) return startApp();
+  if (r && r.status === 409) return location.reload();
+  const d = r ? await r.json().catch(() => ({})) : {};
+  say(!r ? '프로그램에 연결하지 못했습니다.' : setupMode ? '암호를 저장하지 못했습니다.' : '암호가 맞지 않습니다.');
+  form.classList.remove('shake'); void form.offsetWidth; form.classList.add('shake');
+  if (d.wait) hold(d.wait); else { setDisabled(false); pw.focus(); }
+});
+
+$('#eye').addEventListener('click', e => {
+  const show = pw.type === 'password';
+  pw.type = pw2.type = show ? 'text' : 'password';
+  e.currentTarget.textContent = show ? '가리기' : '보기';
+  e.currentTarget.setAttribute('aria-pressed', show);
+});
+for (const input of [pw, pw2]) for (const ev of ['keydown', 'keyup'])
+  input.addEventListener(ev, e => { $('#caps').hidden = !(e.getModifierState && e.getModifierState('CapsLock')); });
+
+/* 작은 3D: 라이브러리 없이 WebGL로 정이십면체 하나. 잠금 화면에서만 돈다. */
+function start3d(canvas) {
+  const gl = canvas.getContext('webgl', { antialias: true, alpha: true, powerPreference: 'low-power' });
+  if (!gl) { canvas.hidden = true; return () => {}; }
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = canvas.height = 160 * dpr;
+  const t = (1 + Math.sqrt(5)) / 2;
+  const V = [[-1,t,0],[1,t,0],[-1,-t,0],[1,-t,0],[0,-1,t],[0,1,t],[0,-1,-t],[0,1,-t],[t,0,-1],[t,0,1],[-t,0,-1],[-t,0,1]];
+  const F = [0,11,5,0,5,1,0,1,7,0,7,10,0,10,11,1,5,9,5,11,4,11,10,2,10,7,6,7,1,8,3,9,4,3,4,2,3,2,6,3,6,8,3,8,9,4,9,5,2,4,11,6,2,10,8,6,7,9,8,1];
+  const data = [];
+  for (let i = 0; i < F.length; i += 3) {
+    const a = V[F[i]], b = V[F[i + 1]], c = V[F[i + 2]];
+    const u = [b[0]-a[0], b[1]-a[1], b[2]-a[2]], v = [c[0]-a[0], c[1]-a[1], c[2]-a[2]];
+    const n = [u[1]*v[2]-u[2]*v[1], u[2]*v[0]-u[0]*v[2], u[0]*v[1]-u[1]*v[0]];
+    const len = Math.hypot(n[0], n[1], n[2]);
+    for (const p of [a, b, c]) data.push(p[0], p[1], p[2], n[0]/len, n[1]/len, n[2]/len);
+  }
+  const shader = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); return s; };
+  const prog = gl.createProgram();
+  gl.attachShader(prog, shader(gl.VERTEX_SHADER, `
+    attribute vec3 p, n; uniform vec2 r; varying vec3 vn;
+    void main(){
+      float cy=cos(r.x), sy=sin(r.x), cx=cos(r.y), sx=sin(r.y);
+      mat3 m = mat3(1.,0.,0., 0.,cx,sx, 0.,-sx,cx) * mat3(cy,0.,-sy, 0.,1.,0., sy,0.,cy);
+      vn = m * n; vec3 q = m * p * .44;
+      gl_Position = vec4(q.xy, -q.z * .5, 1.);
+    }`));
+  gl.attachShader(prog, shader(gl.FRAGMENT_SHADER, `
+    precision mediump float; varying vec3 vn;
+    void main(){
+      float d = max(dot(normalize(vn), normalize(vec3(.4,.7,.6))), 0.);
+      gl_FragColor = vec4(mix(vec3(.42,.47,.58), vec3(.93,.95,1.), d), 1.);
+    }`));
+  gl.linkProgram(prog);
+  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { canvas.hidden = true; return () => {}; }
+  gl.useProgram(prog);
+  gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
+  for (const [name, offset] of [['p', 0], ['n', 12]]) {
+    const loc = gl.getAttribLocation(prog, name);
+    gl.enableVertexAttribArray(loc);
+    gl.vertexAttribPointer(loc, 3, gl.FLOAT, false, 24, offset);
+  }
+  gl.enable(gl.DEPTH_TEST);
+  gl.viewport(0, 0, canvas.width, canvas.height);
+  const uR = gl.getUniformLocation(prog, 'r');
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let raf = 0, last = 0, ang = 0.6;
+  const draw = now => {
+    if (!still) raf = requestAnimationFrame(draw);       // 탭이 가려지면 브라우저가 알아서 멈춘다
+    if (last && now - last < 33) return;                 // 초당 30장이면 충분
+    if (last) ang += (now - last) * 0.0004;
+    last = now;
+    gl.uniform2f(uR, ang, 0.45 + Math.sin(ang * 0.7) * 0.15);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.drawArrays(gl.TRIANGLES, 0, 60);
+  };
+  raf = requestAnimationFrame(draw);
+  return () => { cancelAnimationFrame(raf); const x = gl.getExtension('WEBGL_lose_context'); if (x) x.loseContext(); };
+}
+
+/* ───────── 번역 ───────── */
+// ponytail: 구글 번역의 비공식 무료 주소. 막히면 원문이 그대로 보인다. 그때는 공식 번역 API 키로 바꾼다.
+async function gtx(q) {
+  const r = await fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=ko&dt=t',
+    { method: 'POST', body: new URLSearchParams({ q }) });
+  if (!r.ok) throw new Error('translate ' + r.status);
+  const d = await r.json();
+  return (d[0] || []).map(s => s[0] || '').join('');
+}
+
+// 한 줄짜리 글 여러 개를 줄바꿈으로 묶어 한 번에 번역한다(요청 수 절약).
+// 줄 수가 어긋나면 그 묶음만 한 줄씩 다시 번역한다.
+async function trLines(lines) {
+  const out = [];
+  for (let i = 0; i < lines.length;) {
+    let j = i, size = 0;
+    while (j < lines.length && (j === i || size + lines[j].length < 3500)) size += lines[j++].length + 1;
+    const part = lines.slice(i, j).map(s => s.slice(0, 4500));   // ponytail: 한 줄 4,500자 넘는 부분은 번역 생략
+    let got = (await gtx(part.join('\n'))).split('\n');
+    if (got.length !== part.length) {
+      got = [];
+      for (const line of part) got.push((await gtx(line)).replace(/\n/g, ' '));
+    }
+    for (const s of got) out.push(s.trim());
+    i = j;
+  }
+  return out;
+}
+
+/* ───────── 글 목록 ───────── */
+const posts = new Map();                 // id → 글
+let cache = {};                          // id → { t: 번역 제목, b: { 문단 번호: 번역 } }
+try { cache = JSON.parse(localStorage.getItem('rk_tr')) || {}; } catch {}
+function persist() {
+  const keep = {};                       // 화면에 있는 글 것만 남긴다(최대 100개)
+  for (const id of posts.keys()) if (cache[id]) keep[id] = cache[id];
+  cache = keep;
+  try { localStorage.setItem('rk_tr', JSON.stringify(keep)); } catch { try { localStorage.removeItem('rk_tr'); } catch {} }
+}
+
+// 번역문(.ko)과 원문(.og)을 함께 담는 요소. 번역이 오기 전에는 원문을 흐리게 보여 준다.
+function bi(tag, cls, text) {
+  const e = el(tag, cls);
+  e.append(el('span', 'ko wait', text), el('span', 'og', text));
+  return e;
+}
+const setKo = (e, text) => { e.firstChild.textContent = text; e.firstChild.classList.remove('wait'); };
+
+const ago = t => {
+  const m = Math.max(0, Math.round((Date.now() - t) / 60000));
+  return m < 1 ? '방금' : m < 60 ? m + '분 전' : m < 1440 ? Math.floor(m / 60) + '시간 전' : new Date(t).toLocaleDateString('ko-KR');
+};
+const oneLine = s => s.replace(/\s+/g, ' ').trim();
+const outLink = (href, text) => {
+  const a = el('a', '', text);
+  a.href = href; a.target = '_blank'; a.rel = 'noopener noreferrer';
+  return a;
+};
+
+// Reddit 본문 HTML → 문단 목록. 화면에는 이 글자들만 다시 그린다(HTML을 그대로 넣지 않는다).
+function blocksOf(root) {
+  const out = [];
+  (function walk(node, quote) {
+    for (const c of node.children) {
+      const tag = c.tagName;
+      if (tag === 'PRE') out.push({ k: 'pre', text: c.textContent.replace(/\n+$/, '') });
+      else if (/^H[1-6]$/.test(tag)) out.push({ k: 'h', text: oneLine(c.textContent) });
+      else if (tag === 'P') out.push({ k: quote ? 'q' : 'p', text: oneLine(c.textContent) });
+      else if (tag === 'TR') out.push({ k: 'li', text: [...c.children].map(x => oneLine(x.textContent)).join(' | ') });
+      else if (tag === 'LI') {
+        const own = c.cloneNode(true);
+        own.querySelectorAll('ul,ol').forEach(x => x.remove());
+        out.push({ k: 'li', text: oneLine(own.textContent) });
+        for (const sub of c.children) if (sub.tagName === 'UL' || sub.tagName === 'OL') walk(sub, quote);
+      } else walk(c, quote || tag === 'BLOCKQUOTE');
+    }
+  })(root, false);
+  return out.filter(b => b.text);
+}
+
+function parseFeed(xml) {
+  const doc = new DOMParser().parseFromString(xml, 'application/xml');
+  if (doc.querySelector('parsererror')) throw new Error('feed');
+  const out = [];
+  for (const e of doc.getElementsByTagName('entry')) {
+    const g = name => { const n = e.getElementsByTagName(name)[0]; return n ? n.textContent.trim() : ''; };
+    const id = g('id').replace(/^t3_/, '');
+    const linkEl = e.getElementsByTagName('link')[0];
+    const link = linkEl ? linkEl.getAttribute('href') || '' : '';
+    if (!/^[a-z0-9]+$/.test(id) || !link.startsWith('https://www.reddit.com/r/')) continue;
+    const html = new DOMParser().parseFromString(g('content'), 'text/html');   // 실행되지 않는 문서
+    const md = html.querySelector('.md');
+    const extEl = [...html.querySelectorAll('a')].find(a => a.textContent === '[link]');
+    const ext = extEl ? extEl.getAttribute('href') || '' : '';
+    const hrefs = new Set();
+    let img = '';
+    if (/^https:\/\/(i|preview)\.redd\.it\/\S+\.(png|jpe?g|gif|webp)(\?|$)/i.test(ext)) img = ext;
+    else if (/^https?:\/\//.test(ext) && !ext.includes('/comments/' + id)) hrefs.add(ext);
+    if (md) for (const a of md.querySelectorAll('a[href]')) {
+      const h = a.getAttribute('href');
+      if (/^https?:\/\//.test(h)) hrefs.add(h);
+    }
+    out.push({
+      id, link, img, title: oneLine(g('title')), author: g('name').replace(/^\/u\//, ''),
+      time: Date.parse(g('published')) || Date.now(),
+      blocks: md ? blocksOf(md) : [], links: [...hrefs].slice(0, 8),
+    });
+  }
+  return out;
+}
+
+function card(p) {
+  const a = el('article', 'card'), d = el('details'), s = el('summary');
+  a.dataset.id = p.id;
+  // 목록에서 미리 보여 줄 앞 두 문단(코드 제외)
+  p.lead = p.blocks.map((b, i) => b.k === 'pre' ? -1 : i).filter(i => i >= 0).slice(0, 2);
+  p.elTitle = bi('h2', 'title', p.title);
+  p.elLead = bi('p', 'excerpt', p.lead.map(i => p.blocks[i].text).join(' '));
+  p.elLead.hidden = !p.lead.length;
+  p.elTime = el('time', '', ago(p.time));
+  p.elTime.dateTime = new Date(p.time).toISOString();
+  const meta = el('div', 'meta');
+  meta.append(el('span', '', p.author), p.elTime, outLink(p.link, 'Reddit에서 보기'));
+  s.append(p.elTitle, p.elLead, meta);
+  p.elBody = el('div', 'body');
+  d.append(s, p.elBody);
+  d.addEventListener('toggle', () => { if (d.open) openPost(p); });
+  a.append(d);
+  applyKo(p);
+  return a;
+}
+
+function applyKo(p) {
+  const c = cache[p.id];
+  if (!c) return;
+  if (c.t) setKo(p.elTitle, c.t);
+  if (p.lead.length && p.lead.every(i => c.b[i])) setKo(p.elLead, p.lead.map(i => c.b[i]).join(' '));
+  if (p.elBlocks) p.elBlocks.forEach((e, i) => { if (e && c.b[i]) setKo(e, c.b[i]); });
+}
+
+// 아직 번역 안 된 제목·문단만 모아 번역한다. full이면 본문 전체, 아니면 미리보기 두 문단.
+async function translate(list, full) {
+  const jobs = [];
+  for (const p of list) {
+    const c = cache[p.id] || (cache[p.id] = { t: '', b: {} });
+    if (!c.t) jobs.push([p, 't', p.title]);
+    const idx = full ? p.blocks.map((b, i) => b.k === 'pre' ? -1 : i).filter(i => i >= 0) : p.lead;
+    for (const i of idx) if (!c.b[i]) jobs.push([p, i, p.blocks[i].text]);
+  }
+  if (!jobs.length) return;
+  const ko = await trLines(jobs.map(j => j[2]));
+  jobs.forEach(([p, key, text], n) => {
+    const c = cache[p.id];
+    if (!c) return;                                         // 번역 사이에 목록에서 빠진 글
+    if (key === 't') c.t = ko[n] || text; else c.b[key] = ko[n] || text;
+  });
+  new Set(jobs.map(j => j[0])).forEach(applyKo);
+  persist();
+}
+
+function buildBody(p) {
+  const tags = { p: 'p', h: 'h3', li: 'p', q: 'blockquote' };
+  p.elBlocks = p.blocks.map(b => {
+    if (b.k === 'pre') { p.elBody.append(el('pre', '', b.text)); return null; }   // 코드는 번역하지 않는다
+    const e = bi(tags[b.k], b.k === 'li' ? 'li' : '', b.text);
+    p.elBody.append(e);
+    return e;
+  });
+  if (p.img) {
+    const i = el('img');
+    i.loading = 'lazy'; i.decoding = 'async'; i.referrerPolicy = 'no-referrer';
+    i.alt = '글에 첨부된 그림'; i.src = p.img;
+    p.elBody.append(i);
+  }
+  if (p.links.length) {
+    const ul = el('ul', 'links');
+    for (const h of p.links) {
+      const li = el('li');
+      li.append(outLink(h, h.replace(/^https?:\/\/(www\.)?/, '').slice(0, 70)));
+      ul.append(li);
+    }
+    p.elBody.append(ul);
+  }
+  if (!p.blocks.length && !p.img && !p.links.length) p.elBody.append(el('p', 'sub', '본문이 없는 글입니다.'));
+  p.elCm = el('section', 'cms');
+  p.elBody.append(p.elCm);
+  applyKo(p);
+}
+
+async function openPost(p) {
+  if (!p.elBlocks) buildBody(p);
+  loadComments(p);
+  try { await translate([p], true); } catch {}
+}
+
+/* 댓글: 펼칠 때만 불러온다. Reddit 한도를 아끼려고 공개 보관 API(Arctic Shift)에서 읽는다. */
+const cmKo = new Map();                  // 댓글 id → 번역된 줄들(이번 실행 동안만)
+const plain = s => s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&')
+  .replace(/!?\[([^\]]*)\]\((?:https?:|\/)[^)\s]*\)/g, '$1').replace(/\*\*|~~/g, '')
+  .split(/\n+/).map(l => oneLine(l.replace(/^\s*(>+|#+|[-*+])\s+/, ''))).filter(Boolean);
+
+async function loadComments(p) {
+  const box = p.elCm;
+  if (p.cmAt && Date.now() - p.cmAt < 60000) return;      // 1분 안에 다시 펼치면 그대로 둔다
+  p.cmAt = Date.now();
+  if (!box.firstChild) box.append(el('p', 'sub', '댓글을 불러오는 중…'));
+  let list;
+  try {
+    const r = await fetch(`${ARCTIC}/comments/search?link_id=${p.id}&limit=100&fields=id,author,body,parent_id,created_utc`);
+    if (!r.ok) throw new Error('comments ' + r.status);
+    list = (await r.json()).data || [];
+  } catch {
+    p.cmAt = 0;
+    box.replaceChildren(el('p', 'sub', '댓글을 불러오지 못했습니다. Reddit에서 확인해 주세요.'));
+    return;
+  }
+  const ok = list.filter(c => !/^AutoModerator$|bot$/i.test(c.author) && c.body && !/^\[(removed|deleted)\]$/.test(c.body.trim()))
+    .sort((a, b) => a.created_utc - b.created_utc);
+  const ids = new Set(ok.map(c => c.id)), kids = new Map();
+  for (const c of ok) {
+    const par = typeof c.parent_id === 'string' && c.parent_id.startsWith('t1_') && ids.has(c.parent_id.slice(3)) ? c.parent_id.slice(3) : '';
+    if (!kids.has(par)) kids.set(par, []);
+    kids.get(par).push(c);
+  }
+  const flat = [];
+  (function walk(par, depth) {
+    for (const c of kids.get(par) || []) {
+      if (flat.length >= 60) return;                        // 한 글에 댓글 60개까지만
+      flat.push([c, depth]);
+      walk(c.id, depth + 1);
+    }
+  })('', 0);
+  const nodes = [el('h3', 'cmh', flat.length ? `댓글 ${flat.length}개` : '아직 댓글이 없습니다')], jobs = [];
+  for (const [c, depth] of flat) {
+    const d = el('div', 'cm');
+    d.style.marginLeft = Math.min(depth, 3) * 14 + 'px';
+    d.append(el('div', 'meta', `${c.author} · ${ago(c.created_utc * 1000)}`));
+    const known = cmKo.get(c.id);
+    plain(String(c.body)).forEach((text, i) => {
+      const e = bi('p', '', text);
+      d.append(e);
+      if (known && known[i]) setKo(e, known[i]); else jobs.push([c.id, i, text, e]);
+    });
+    nodes.push(d);
+  }
+  box.replaceChildren(...nodes);
+  if (!jobs.length) return;
+  try {
+    const ko = await trLines(jobs.map(j => j[2]));
+    if (cmKo.size > 800) cmKo.clear();
+    jobs.forEach(([id, i, text, e], n) => {
+      if (!cmKo.has(id)) cmKo.set(id, []);
+      cmKo.get(id)[i] = ko[n] || text;
+      setKo(e, ko[n] || text);
+    });
+  } catch {}
+}
+
+/* ───────── 실시간 갱신 ───────── */
+let timer = 0, polling = false, fails = 0, unseen = 0;
+const pill = $('#pill');
+function setStatus(ok, note) {
+  $('#status').classList.toggle('off', !ok);
+  $('#statusText').textContent = ok
+    ? `실시간 · ${new Date().toLocaleTimeString('en-GB')} 갱신${note ? ' · ' + note : ''}`
+    : '연결 끊김 · 다시 시도 중';
+}
+function setPill(n) {
+  unseen = n;
+  pill.textContent = `새 글 ${n}개 보기`;
+  pill.classList.toggle('on', n > 0);
+  pill.inert = !n;
+}
+
+function merge(items) {
+  const feed = $('#feed'), first = !posts.size;
+  const fresh = items.filter(p => !posts.has(p.id));
+  if (first) feed.replaceChildren();
+  // 처음엔 받은 순서대로 붙이고, 그 뒤로는 오래된 것부터 맨 위에 끼워 최신 글이 맨 위로 오게 한다.
+  for (const p of first ? fresh : fresh.slice().reverse()) {
+    posts.set(p.id, p);
+    const node = card(p);
+    if (first) feed.append(node); else { node.classList.add('new'); feed.prepend(node); }
+  }
+  while (feed.children.length > MAX_CARDS) {
+    posts.delete(feed.lastElementChild.dataset.id);
+    feed.lastElementChild.remove();
+  }
+  if (!posts.size) feed.replaceChildren(el('p', 'note', '아직 글이 없습니다.'));
+  if (!first && fresh.length && window.scrollY > 300) setPill(unseen + fresh.length);
+  for (const p of posts.values()) p.elTime.textContent = ago(p.time);
+}
+
+async function poll() {
+  if (polling) return;
+  polling = true;
+  clearTimeout(timer);
+  let delay = 30, ok = false;
+  try {
+    const r = await fetch('/api/feed');
+    if (r.status === 401) return location.reload();        // 프로그램이 다시 켜졌거나 잠김
+    if (!r.ok) throw new Error('feed ' + r.status);
+    merge(parseFeed(await r.text()));
+    ok = true; fails = 0;
+  } catch {
+    delay = Math.min(15 * 2 ** ++fails, 300);
+  } finally { polling = false; }
+  setStatus(ok);
+  // 번역이 실패해도 글 목록은 그대로 둔다. 남은 건 다음 주기에 다시 시도한다.
+  try { await translate([...posts.values()], false); } catch { if (ok) setStatus(true, '번역 지연'); }
+  if (!document.hidden) timer = setTimeout(poll, delay * 1000);
+}
+// 탭이 가려지면 갱신을 멈추고, 다시 보이면 바로 한 번 받는다.
+document.addEventListener('visibilitychange', () => { clearTimeout(timer); if (!document.hidden && !$('#app').hidden) poll(); });
+window.addEventListener('scroll', () => { if (unseen && window.scrollY < 100) setPill(0); }, { passive: true });
+pill.addEventListener('click', () => {
+  window.scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  setPill(0);
+});
+
+$('#lang').addEventListener('click', e => {
+  e.currentTarget.setAttribute('aria-pressed', !document.body.classList.toggle('solo'));
+});
+$('#relock').addEventListener('click', async () => {
+  try { await fetch('/api/lock/out', { method: 'POST' }); } catch {}
+  location.reload();
+});
+$('#quit').addEventListener('click', async () => {
+  if (!confirm('프로그램을 끝낼까요?')) return;
+  clearTimeout(timer);
+  try { await fetch('/api/quit', { method: 'POST' }); } catch {}
+  document.body.replaceChildren(el('p', 'note', '프로그램을 끝냈습니다. 이 탭은 닫아도 됩니다.'));
+});
+
+function startApp() {
+  if (stop3d) { stop3d(); stop3d = null; }
+  $('#lock').hidden = true;
+  $('#app').hidden = false;
+  poll();
+}
+
+(async function boot() {
+  try {
+    const st = await (await fetch('/api/lock')).json();
+    if (st.open) startApp(); else showLock(st);
+  } catch {
+    document.body.replaceChildren(el('p', 'note', '프로그램에 연결하지 못했습니다. 다시 실행해 주세요.'));
+  }
+})();
+</script>
+</body>
+</html>
