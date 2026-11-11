@@ -103,6 +103,28 @@ fn authed(g: &Inner, h: &HeaderMap) -> bool {
         .any(|got| same(got.as_bytes(), want.as_bytes()))
 }
 
+// 이 PC의 이 주소로 온 요청만 받는다.
+// Host 확인: 다른 도메인 이름을 127.0.0.1로 돌려 접근하는 수법(DNS rebinding) 차단.
+// Origin 확인: 다른 사이트나 다른 포트의 페이지가 보내는 요청(CSRF) 차단.
+const HOSTS: [&str; 2] = ["127.0.0.1:8897", "localhost:8897"];
+
+fn local_only(h: &HeaderMap) -> bool {
+    let get = |name: header::HeaderName| h.get(name).and_then(|v| v.to_str().ok());
+    let host_ok = get(header::HOST).is_some_and(|v| HOSTS.contains(&v));
+    let origin_ok = match get(header::ORIGIN) {
+        None => true,
+        Some(o) => o.strip_prefix("http://").is_some_and(|rest| HOSTS.contains(&rest)),
+    };
+    host_ok && origin_ok
+}
+
+async fn guard(req: axum::extract::Request, next: axum::middleware::Next) -> Response {
+    if !local_only(req.headers()) {
+        return fail(StatusCode::FORBIDDEN);
+    }
+    next.run(req).await
+}
+
 fn fail(code: StatusCode) -> Response {
     code.into_response()
 }
@@ -308,6 +330,7 @@ async fn main() {
         .route("/api/lock/out", post(logout))
         .route("/api/feed", get(feed))
         .route("/api/quit", post(quit))
+        .layer(axum::middleware::from_fn(guard))
         .with_state(app);
     if open {
         open_browser(&url);
@@ -336,6 +359,25 @@ mod tests {
         assert_eq!(a, derive("pw-one", b"salt-salt-salt-1", 1000));
         assert_ne!(a, derive("pw-two", b"salt-salt-salt-1", 1000));
         assert_ne!(a, derive("pw-one", b"salt-salt-salt-2", 1000));
+    }
+
+    #[test]
+    fn only_local_host_and_origin_pass() {
+        let req = |host: &'static str, origin: Option<&'static str>| {
+            let mut h = HeaderMap::new();
+            h.insert(header::HOST, HeaderValue::from_static(host));
+            if let Some(o) = origin {
+                h.insert(header::ORIGIN, HeaderValue::from_static(o));
+            }
+            local_only(&h)
+        };
+        assert!(req("127.0.0.1:8897", None));
+        assert!(req("localhost:8897", Some("http://127.0.0.1:8897")));
+        assert!(!req("evil.example:8897", None));
+        assert!(!req("127.0.0.1:8897", Some("http://127.0.0.1:3000")));
+        assert!(!req("127.0.0.1:8897", Some("https://evil.example")));
+        assert!(!req("127.0.0.1:8897", Some("null")));
+        assert!(!local_only(&HeaderMap::new()));
     }
 
     #[test]
